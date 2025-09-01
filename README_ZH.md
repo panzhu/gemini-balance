@@ -132,6 +132,86 @@ app/
     ```
     应用启动后，访问 `http://localhost:8000`。
 
+4. **生产环境**：    
+    ```bash
+    # 创建虚拟环境（路径可自定义，比如 ./venv)
+    python3 -m venv venv
+    
+    # 激活虚拟环境
+    source venv/bin/activate  # 激活后命令行前会显示 (venv)
+
+    # 此时再安装依赖（无需管理员权限）
+    pip install -r requirements.txt
+    ```
+    核心区别：
+    直接用 Uvicorn 启动
+    ```bash
+    uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 --loop uvloop --http httptools
+    ```
+
+    - 各参数说明：
+        - workers 4：指定工作进程数量（通常设为 CPU 核心数的 2-4 倍，可通过 python -c "import os; print(os.cpu_count())" 查看核心数）。
+        - loop uvloop：使用更快的 uvloop 事件循环（需先安装：pip install uvloop）。
+        - http httptools：使用更高效的 httptools 解析器（需先安装：pip install httptools）。
+        - 直接由 Uvicorn 管理多个工作进程（--workers 4）。  
+        - 适合简单的生产环境，配置直观。
+
+    用 Gunicorn 配合 Uvicorn 启动
+    ```bash
+    gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+    ```
+- Gunicorn 作为进程管理器，Uvicorn 作为工作进程（-k uvicorn.workers.UvicornWorker）。  
+- Gunicorn 提供更完善的进程监控、重启、负载均衡能力，适合高并发生产环境。
+- 适合简单的生产环境，配置直观。
+
+- Gunicorn 作为进程管理器，Uvicorn 作为工作进程（-k uvicorn.workers.UvicornWorker）。
+- Gunicorn 提供更完善的进程监控、重启、负载均衡能力，适合高并发生产环境。
+- 选择建议：
+    - 小型应用 / 简单部署：直接用 Uvicorn 命令更简洁。
+    - 生产环境 / 高可用性需求：优先用 Gunicorn + Uvicorn 组合，稳定性和可维护性更好。
+5. ***生产环境推荐：使用进程管理工具***
+    对于生产环境，更推荐使用进程管理工具（如 systemd、supervisor），可以实现自动重启、日志管理等功能。
+    
+    1.示例：用 systemd 管理（Linux 系统）
+    创建服务配置文件：
+    ```bash
+    sudo vim /etc/systemd/system/uvicorn.service
+    ```
+    内容如下：
+    ```bash
+    [Unit]
+    Description=Uvicorn Service
+    After=network.target
+
+    [Service]
+    User=ubuntu
+    WorkingDirectory=/home/ubuntu/gemini-balance
+    ExecStart=/home/ubuntu/gemini-balance/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2 --loop uvloop --http httptools
+    Restart=always  # 进程意外退出时自动重启
+
+    [Install]
+    WantedBy=multi-user.target
+
+    ```
+
+    2.启动并设置开机自启：
+    ```bash
+    sudo systemctl start uvicorn
+    sudo systemctl enable uvicorn  # 开机自启
+    ```
+    3.查看状态：
+    ```bash
+    sudo systemctl status uvicorn  # 查看状态
+    sudo systemctl stop uvicorn    # 停止服务
+    sudo systemctl daemon-reload   # 重新加载配置    
+    sudo systemctl restart uvicorn # 重启服务
+
+    journalctl -u uvicorn -f  # 实时查看服务日志
+
+    ps -ef | grep uvicorn  # 查看进程
+    kill -9 <进程ID>        # 找到进程 ID 后,杀死进程
+
+    ```
 ---
 
 ## ⚙️ API 端点

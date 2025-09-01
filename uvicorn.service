@@ -1,0 +1,12 @@
+[Unit]
+Description=Uvicorn Service
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/gemini-balance
+ExecStart=/home/ubuntu/gemini-balance/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2 --loop uvloop --http httptools
+Restart=always  # 进程意外退出时自动重启
+
+[Install]
+WantedBy=multi-user.target
