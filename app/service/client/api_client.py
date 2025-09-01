@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from app.config.config import settings
 from app.log.logger import get_api_client_logger
 from app.core.constants import DEFAULT_TIMEOUT
+from app.utils.rate_limiter import rate_limiter
 
 logger = get_api_client_logger()
 
@@ -75,6 +76,9 @@ class GeminiApiClient(ApiClient):
                 return None
             
     async def generate_content(self, payload: Dict[str, Any], model: str, api_key: str) -> Dict[str, Any]:
+        # 应用速率限制
+        await rate_limiter.acquire(model)
+        
         timeout = httpx.Timeout(self.timeout, read=self.timeout)
         model = self._get_real_model(model)
         
@@ -118,6 +122,9 @@ class GeminiApiClient(ApiClient):
                 raise
 
     async def stream_generate_content(self, payload: Dict[str, Any], model: str, api_key: str) -> AsyncGenerator[str, None]:
+        # 应用速率限制
+        await rate_limiter.acquire(model)
+        
         timeout = httpx.Timeout(self.timeout, read=self.timeout)
         model = self._get_real_model(model)
         

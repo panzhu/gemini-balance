@@ -170,12 +170,19 @@ def redact_key_for_logging(key: str) -> str:
     Returns:
         str: Redacted key in format "first6...last6" or descriptive placeholder for edge cases
     """
+    # Handle None or non-string types
+    if not isinstance(key, str):
+        return "[INVALID_KEY]" if key is None else "[INVALID_KEY]"
+    
+    # Handle empty string
     if not key:
-        return key
+        return "[INVALID_KEY]"
 
+    # Handle short keys (<= 12 characters)
     if len(key) <= 12:
-        return f"{key[:3]}...{key[-3:]}"
+        return "[SHORT_KEY]"
     else:
+        # For longer keys, show first 6 and last 6
         return f"{key[:6]}...{key[-6:]}"
 
 

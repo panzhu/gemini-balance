@@ -1,3 +1,5 @@
+"""日志记录模块"""
+
 import logging
 import platform
 import re
@@ -307,6 +309,10 @@ def get_vertex_express_logger():
 
 def get_gemini_embedding_logger():
     return Logger.setup_logger("gemini_embedding")
+
+
+def get_rate_limiter_logger():
+    return Logger.setup_logger("rate_limiter")
 
 
 def setup_access_logging():
